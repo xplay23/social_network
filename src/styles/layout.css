@@ -1,0 +1,45 @@
+.app-shell {
+  min-height: var(--viewport-height);
+  padding-bottom: calc(var(--size-76) + env(safe-area-inset-bottom));
+}
+
+.layout {
+  width: 100%;
+}
+
+.main-content {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-16);
+}
+
+.page-heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  padding: var(--size-22) var(--size-16) var(--size-14);
+}
+
+.page-heading__eyebrow {
+  color: var(--color-text-secondary);
+  font-size: var(--size-11);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+}
+
+.page-heading__title {
+  margin: var(--size-3) 0 0;
+  font-size: var(--size-26);
+  letter-spacing: calc(var(--size-0-8) * -1);
+}
+
+.page-heading__action {
+  padding: var(--size-6) 0;
+  border: 0;
+  color: var(--color-primary);
+  background: var(--color-transparent);
+  font-size: var(--size-13);
+  font-weight: var(--font-weight-bold);
+}

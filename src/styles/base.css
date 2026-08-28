@@ -1,0 +1,9 @@
+* {
+  box-sizing: border-box;
+  font-family: inherit;
+}
+
+.page {
+  min-width: var(--size-320);
+  margin: 0;
+}
