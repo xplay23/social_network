@@ -1,13 +1,12 @@
-import { supabase } from '../lib/supabase'
+import { apiRequest } from '../lib/api'
 
 export const socialCommentsService = {
   listForPost: (postId: string) =>
-    supabase.from('social_comments').select('*').eq('post_id', postId).order('created_at'),
-  create: (postId: string, authorId: string, content: string) =>
-    supabase
-      .from('social_comments')
-      .insert({ post_id: postId, author_id: authorId, content })
-      .select()
-      .single(),
-  remove: (id: string) => supabase.from('social_comments').delete().eq('id', id),
+    apiRequest<unknown[]>(`/posts/${encodeURIComponent(postId)}/comments`),
+  create: (postId: string, _authorId: string, content: string) =>
+    apiRequest(`/posts/${encodeURIComponent(postId)}/comments`, {
+      method: 'POST',
+      body: JSON.stringify({ content }),
+    }),
+  remove: (id: string) => apiRequest(`/comments/${encodeURIComponent(id)}`, { method: 'DELETE' }),
 }

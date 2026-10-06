@@ -1,8 +1,6 @@
 <script setup lang="ts">
-import type { Session } from '@supabase/supabase-js'
 import { computed, onMounted, ref, watch } from 'vue'
-import { isSupabaseConfigured, supabase } from './lib/supabase'
-import { authService } from './services/auth.service'
+import { authService, type Session } from './services/auth.service'
 import { profilesService } from './services/profiles.service'
 import { socialFriendsService } from './services/socialFriends.service'
 import { socialLikesService } from './services/socialLikes.service'
@@ -123,34 +121,14 @@ async function loadData() {
   errorMessage.value = ''
   const [profileResult, postsResult, friendsResult] = await Promise.all([
     profilesService.getById(user.value.id),
-    supabase
-      .from('social_posts')
-      .select(
-        'id,author_id,content,image_url,created_at,author:profiles!social_posts_author_id_fkey(id,display_name,username,avatar_url),social_likes(user_id),social_comments(id)',
-      )
-      .order('created_at', { ascending: false }),
-    supabase
-      .from('social_friendships')
-      .select(
-        'id,sender_id,receiver_id,status,sender:profiles!social_friendships_sender_id_fkey(id,display_name,username,avatar_url),receiver:profiles!social_friendships_receiver_id_fkey(id,display_name,username,avatar_url)',
-      )
-      .or(`sender_id.eq.${user.value.id},receiver_id.eq.${user.value.id}`),
+    socialPostsService.list(),
+    socialFriendsService.listForUser(user.value.id),
   ])
   const firstError = profileResult.error || postsResult.error || friendsResult.error
   if (firstError) errorMessage.value = firstError.message
   else {
     profile.value = profileResult.data as Profile
-    posts.value = (postsResult.data || []).map((row: any) => ({
-      id: row.id,
-      authorId: row.author_id,
-      author: row.author,
-      createdAt: row.created_at,
-      text: row.content,
-      imageUrl: row.image_url,
-      likes: row.social_likes?.length || 0,
-      comments: row.social_comments?.length || 0,
-      liked: row.social_likes?.some((like: any) => like.user_id === user.value?.id) || false,
-    }))
+    posts.value = (postsResult.data || []) as Post[]
     friendships.value = (friendsResult.data || []) as unknown as Friendship[]
   }
   loading.value = false
@@ -174,8 +152,6 @@ async function submitAuth() {
       })
       if (error) throw error
       session.value = data.session
-      if (!data.session)
-        authError.value = 'Подтвердите регистрацию по ссылке в письме, затем войдите.'
     }
     if (session.value) await loadData()
   } catch (error) {
@@ -230,13 +206,10 @@ async function search() {
     searchResults.value = []
     return
   }
-  const { data, error } = await supabase
-    .from('profiles')
-    .select('id,display_name,username,avatar_url')
-    .or(`display_name.ilike.%${term}%,username.ilike.%${term}%`)
-    .limit(20)
+  const { data, error } = await profilesService.search(term)
   if (error) errorMessage.value = error.message
-  else searchResults.value = (data || []).filter((item) => item.id !== user.value?.id) as Profile[]
+  else
+    searchResults.value = ((data || []) as Profile[]).filter((item) => item.id !== user.value?.id)
 }
 watch(searchQuery, () => {
   activePage.value = 'search'
@@ -244,14 +217,9 @@ watch(searchQuery, () => {
   searchTimer = setTimeout(search, 400)
 })
 onMounted(async () => {
-  if (isSupabaseConfigured) {
-    const { data } = await authService.getSession()
-    session.value = data.session
-    if (session.value) await loadData()
-    authService.onAuthStateChange(async (_event, value) => {
-      session.value = value
-    })
-  }
+  const { data } = await authService.getSession()
+  session.value = data.session
+  if (session.value) await loadData()
   initialized.value = true
 })
 </script>
@@ -260,10 +228,6 @@ onMounted(async () => {
   <div v-if="!initialized" class="status-screen">
     <span class="status-screen__loader"></span>
     <p class="status-screen__text">Загрузка…</p>
-  </div>
-  <div v-else-if="!isSupabaseConfigured" class="status-screen">
-    <h1 class="status-screen__title">Supabase не настроен</h1>
-    <p class="status-screen__text">Заполните переменные в .env.</p>
   </div>
   <main v-else-if="!session" class="auth-page">
     <section class="auth-card">
@@ -274,7 +238,7 @@ onMounted(async () => {
       <h1 class="auth-card__title">
         {{ authMode === 'login' ? 'С возвращением' : 'Создать аккаунт' }}
       </h1>
-      <p class="auth-card__subtitle">Общий аккаунт Supabase</p>
+      <p class="auth-card__subtitle">Ваш аккаунт Circle</p>
       <form class="auth-form" @submit.prevent="submitAuth">
         <label v-if="authMode === 'register'" class="auth-form__field"
           ><span class="auth-form__label">Имя</span

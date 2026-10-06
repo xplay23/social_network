@@ -3,4 +3,3 @@ dist
 docs
 .git
 *.tsbuildinfo
-supabase/existing-schema.sql

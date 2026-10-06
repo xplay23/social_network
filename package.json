@@ -4,19 +4,21 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "concurrently \"npm:dev:api\" \"npm:dev:web\"",
+    "dev:web": "vite",
+    "dev:api": "php -S 127.0.0.1:3000 api/router.php",
     "build": "vue-tsc -b && vite build",
     "type-check": "vue-tsc -b",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.56.0",
     "@vitejs/plugin-vue": "latest",
     "vite": "latest",
     "vue": "latest"
   },
   "devDependencies": {
+    "concurrently": "^9.2.1",
     "prettier": "^3.9.6",
     "typescript": "~5.9.3",
     "vue-tsc": "latest"

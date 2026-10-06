@@ -1,4 +1,4 @@
-import { supabase } from '../lib/supabase'
+import { apiRequest } from '../lib/api'
 
 export interface SocialProfilePatch {
   bio?: string | null
@@ -7,12 +7,10 @@ export interface SocialProfilePatch {
 }
 
 export const socialProfilesService = {
-  get: (userId: string) =>
-    supabase.from('social_profiles').select('*').eq('user_id', userId).maybeSingle(),
+  get: (userId: string) => apiRequest(`/profiles/${encodeURIComponent(userId)}/details`),
   upsert: (userId: string, patch: SocialProfilePatch) =>
-    supabase
-      .from('social_profiles')
-      .upsert({ user_id: userId, ...patch })
-      .select()
-      .single(),
+    apiRequest(`/profiles/${encodeURIComponent(userId)}/details`, {
+      method: 'PUT',
+      body: JSON.stringify(patch),
+    }),
 }

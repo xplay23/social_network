@@ -1,4 +1,4 @@
-import { supabase } from '../lib/supabase'
+import { apiRequest } from '../lib/api'
 
 export interface ProfilePatch {
   display_name?: string
@@ -7,9 +7,13 @@ export interface ProfilePatch {
 }
 
 export const profilesService = {
-  getById: (id: string) => supabase.from('profiles').select('*').eq('id', id).single(),
+  getById: (id: string) => apiRequest(`/profiles/${encodeURIComponent(id)}`),
   getByUsername: (username: string) =>
-    supabase.from('profiles').select('*').ilike('username', username).single(),
+    apiRequest(`/profiles/by-username/${encodeURIComponent(username)}`),
+  search: (term: string) => apiRequest<unknown[]>(`/profiles?search=${encodeURIComponent(term)}`),
   updateShared: (id: string, patch: ProfilePatch) =>
-    supabase.from('profiles').update(patch).eq('id', id).select().single(),
+    apiRequest(`/profiles/${encodeURIComponent(id)}`, {
+      method: 'PATCH',
+      body: JSON.stringify(patch),
+    }),
 }
